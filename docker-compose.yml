@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "5000:5000"
+    depends_on:
+      - postgres
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://arthik:password@postgres:5432/arthik_db
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SESSION_SECRET=${SESSION_SECRET:-your-session-secret-here}
+      - REPL_ID=${REPL_ID:-your-repl-id}
+      - REPLIT_DOMAINS=localhost:5000
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run dev
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=arthik_db
+      - POSTGRES_USER=arthik
+      - POSTGRES_PASSWORD=password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
