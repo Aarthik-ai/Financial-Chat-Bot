@@ -35,13 +35,52 @@ Important: Always include a disclaimer that past performance doesn't guarantee f
 
     const content = response.choices[0].message.content;
     if (!content) {
-      throw new Error("No response generated");
+      return "I apologize, but I couldn't generate a proper response at this time. Please try rephrasing your question.";
     }
 
     return content;
-  } catch (error) {
+  } catch (error: any) {
     console.error("OpenAI API error:", error);
-    throw new Error("Failed to generate AI response: " + (error as Error).message);
+    
+    // Handle specific OpenAI errors with user-friendly messages
+    if (error.status === 429) {
+      return `Hello! I'm Arthik, your AI trading assistant. I'm currently experiencing high demand, but I can still help you with general trading advice.
+
+Regarding your question about "${userMessage.slice(0, 50)}${userMessage.length > 50 ? '...' : ''}":
+
+While I can't access real-time market data right now, here are some fundamental principles for successful trading:
+
+📊 **Key Trading Factors:**
+- **Risk Management**: Never risk more than 2-3% of your portfolio on a single trade
+- **Research**: Always analyze company fundamentals and market trends
+- **Diversification**: Spread investments across different sectors and assets
+- **Market Timing**: Consider market conditions and economic indicators
+- **Emotional Control**: Stick to your strategy and avoid impulsive decisions
+
+💡 **Remember**: This is educational information, not financial advice. Always consult with qualified financial professionals before making investment decisions.
+
+Please check back later when our full AI capabilities are restored, or contact support if you need immediate assistance with your OpenAI API quota.`;
+    }
+    
+    if (error.status === 401) {
+      return "I'm currently experiencing authentication issues with my AI services. Please contact support to resolve this issue with the OpenAI API configuration.";
+    }
+    
+    // Generic fallback for other errors
+    return `Hello! I'm Arthik, your financial trading assistant. I'm experiencing temporary technical difficulties, but I can still provide some general guidance.
+
+For your question about trading, here are some essential principles:
+
+📈 **Smart Trading Fundamentals:**
+- Start with a clear strategy and stick to it
+- Always use stop-loss orders to limit potential losses
+- Research before you invest - understand what you're buying
+- Keep emotions in check - fear and greed are a trader's worst enemies
+- Stay informed about market news and economic indicators
+
+⚠️ **Important**: This is educational content only, not financial advice. Always do your own research and consider consulting with financial professionals.
+
+I'll be back to full functionality soon. Thank you for your patience!`;
   }
 }
 

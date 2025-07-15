@@ -81,7 +81,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         content: content.trim(),
       });
 
-      // Generate AI response
+      // Generate AI response (with built-in fallback handling)
       const aiResponse = await generateFinancialResponse(content);
       
       // Add AI message
@@ -97,7 +97,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Error processing chat message:", error);
-      res.status(500).json({ message: "Failed to process message" });
+      res.status(500).json({ 
+        message: "Failed to process message",
+        error: "There was an issue processing your request. Please try again or contact support if the problem persists."
+      });
     }
   });
 
@@ -111,8 +114,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Content is required" });
       }
 
-      // Generate title from first message
-      const title = await generateChatTitle(content);
+      // Generate title from first message (with fallback)
+      let title;
+      try {
+        title = await generateChatTitle(content);
+      } catch (error) {
+        console.log("Title generation failed, using fallback");
+        title = content.length > 50 ? content.substring(0, 50) + "..." : content;
+      }
       
       // Create new session
       const session = await storage.createChatSession({ title, userId });
@@ -124,7 +133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         content: content.trim(),
       });
 
-      // Generate AI response
+      // Generate AI response (with built-in fallback handling)
       const aiResponse = await generateFinancialResponse(content);
       
       // Add AI message
@@ -141,7 +150,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Error processing quick message:", error);
-      res.status(500).json({ message: "Failed to process message" });
+      res.status(500).json({ 
+        message: "Failed to process message",
+        error: "There was an issue processing your request. Please try again or contact support if the problem persists."
+      });
     }
   });
 
