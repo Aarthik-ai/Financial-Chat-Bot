@@ -81,11 +81,8 @@ PGDATABASE=arthik_db
 # OpenAI Configuration (Required)
 OPENAI_API_KEY=sk-your-openai-api-key-here
 
-# Authentication Configuration (Optional for local development)
+# Authentication Configuration
 SESSION_SECRET=your-random-session-secret-at-least-32-characters-long
-REPL_ID=your-repl-id-here
-REPLIT_DOMAINS=localhost:5000,127.0.0.1:5000
-ISSUER_URL=https://replit.com/oidc
 
 # Application Configuration
 NODE_ENV=development
@@ -155,13 +152,13 @@ npm run db:studio
 4. Create a new API key
 5. Copy the key and add to `.env`
 
-### Replit Auth (Optional)
+### Email/Password Authentication
 
-For full authentication features:
-1. Create a Replit account
-2. Go to https://replit.com/account
-3. Create an OAuth application
-4. Add credentials to `.env`
+The application now uses email and password authentication instead of third-party OAuth:
+1. Users can register with email, username, and password
+2. Session management with PostgreSQL storage
+3. Secure password hashing with scrypt
+4. No external OAuth dependencies required
 
 ## Project Structure
 

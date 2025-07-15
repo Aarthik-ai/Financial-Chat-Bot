@@ -1,21 +1,21 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated } from "./auth";
 import { generateFinancialResponse, generateChatTitle } from "./openai";
 import { insertChatSessionSchema, insertChatMessageSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
-  await setupAuth(app);
+  setupAuth(app);
 
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
-      res.json(user);
+      res.json({ ...user, password: undefined });
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
@@ -25,7 +25,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Chat routes
   app.get("/api/chat/sessions", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const sessions = await storage.getChatSessions(userId);
       res.json(sessions);
     } catch (error) {
@@ -36,7 +36,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/chat/sessions", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { title } = insertChatSessionSchema.parse({ ...req.body, userId });
       
       const session = await storage.createChatSession({ title, userId });
@@ -104,7 +104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auto-create chat session for first message
   app.post("/api/chat/quick-message", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { content } = req.body;
       
       if (!content?.trim()) {
@@ -148,7 +148,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Subscription routes
   app.post("/api/subscription/upgrade", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { plan } = req.body;
       
       if (!["pro", "enterprise"].includes(plan)) {

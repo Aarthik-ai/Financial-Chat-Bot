@@ -24,20 +24,20 @@ Preferred communication style: Simple, everyday language.
 - **Language**: TypeScript with ES modules
 - **Database**: PostgreSQL with Drizzle ORM
 - **Database Provider**: Neon serverless PostgreSQL
-- **Authentication**: Replit Auth with OpenID Connect
+- **Authentication**: Email/password authentication with passport.js
 - **Session Management**: Express sessions with PostgreSQL storage
 - **AI Integration**: OpenAI GPT-4o for financial analysis
 
 ## Key Components
 
 ### Database Schema
-- **Users**: Stores user profiles with subscription tiers (free, pro, enterprise)
+- **Users**: Stores user profiles with email, username, password hash, and subscription tiers (free, pro, enterprise)
 - **Chat Sessions**: Manages conversation threads between users and AI
 - **Chat Messages**: Stores individual messages with role-based content (user/assistant)
 - **Sessions**: Handles authentication session storage
 
 ### Authentication System
-- Replit Auth integration with OpenID Connect
+- Email/password authentication with secure password hashing
 - Session-based authentication with PostgreSQL storage
 - User profile management with subscription tracking
 - Protected routes requiring authentication
@@ -56,7 +56,7 @@ Preferred communication style: Simple, everyday language.
 
 ## Data Flow
 
-1. **User Authentication**: Users authenticate via Replit Auth, creating or updating user profiles
+1. **User Authentication**: Users register/login with email and password, creating authenticated sessions
 2. **Chat Initialization**: Users can create new chat sessions or continue existing ones
 3. **Message Processing**: User messages are sent to the backend, processed by OpenAI, and responses are stored
 4. **Real-time Updates**: TanStack Query manages cache invalidation and real-time data synchronization
@@ -65,8 +65,8 @@ Preferred communication style: Simple, everyday language.
 ## External Dependencies
 
 ### Core Infrastructure
-- **Database**: Neon serverless PostgreSQL
-- **Authentication**: Replit Auth service
+- **Database**: PostgreSQL with Drizzle ORM
+- **Authentication**: Email/password with passport.js and scrypt hashing
 - **AI Service**: OpenAI API (GPT-4o model)
 
 ### Development Tools
@@ -95,8 +95,7 @@ Preferred communication style: Simple, everyday language.
 ### Environment Configuration
 - Database URL for PostgreSQL connection
 - OpenAI API key for AI functionality
-- Replit Auth credentials for authentication
-- Session secret for security
+- Session secret for authentication security
 
 The application follows a monorepo structure with shared TypeScript definitions, enabling type safety across the full stack while maintaining clear separation between client and server code.
 
@@ -119,3 +118,13 @@ The application follows a monorepo structure with shared TypeScript definitions,
 - Authentication setup for local development
 - Multiple deployment options (native, Docker, automated scripts)
 - Comprehensive documentation and troubleshooting guides
+
+### July 15, 2025 - Email/Password Authentication Implementation
+- Replaced Replit OpenID Connect authentication with email/password system
+- Implemented comprehensive authentication routes with passport.js
+- Added secure password hashing using scrypt algorithm
+- Created dedicated AuthProvider context for React frontend
+- Built complete authentication page with login and registration forms
+- Updated database schema to use integer-based user IDs
+- Removed Replit Auth dependencies from environment configuration
+- Updated all documentation to reflect new authentication system
