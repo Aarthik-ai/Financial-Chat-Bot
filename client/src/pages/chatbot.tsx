@@ -1,57 +1,36 @@
 import { useState, useEffect, useRef } from "react";
-import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useToast } from "@/hooks/use-toast";
-import { useLocation } from "wouter";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { isUnauthorizedError } from "@/lib/authUtils";
-import { Bot, User, Crown, Send } from "lucide-react";
+import { Bot, User, Send } from "lucide-react";
 import { motion } from "framer-motion";
 import type { ChatSession, ChatMessage } from "@shared/schema";
 
 export default function Chatbot() {
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [currentMessage, setCurrentMessage] = useState("");
-  const [currentSessionId, setCurrentSessionId] = useState<number | null>(null);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to access the chatbot.",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-  }, [isAuthenticated, authLoading, toast]);
 
   // Fetch chat sessions
   const { data: sessions = [] } = useQuery({
     queryKey: ["/api/chat/sessions"],
-    enabled: isAuthenticated,
   });
 
   // Fetch messages for current session
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
     queryKey: ["/api/chat/sessions", currentSessionId, "messages"],
-    enabled: isAuthenticated && currentSessionId !== null,
+    enabled: currentSessionId !== null,
   });
 
   // Send message mutation
   const sendMessageMutation = useMutation({
-    mutationFn: async (data: { content: string; sessionId?: number }) => {
+    mutationFn: async (data: { content: string; sessionId?: string }) => {
       if (data.sessionId) {
         return await apiRequest("POST", "/api/chat/message", {
           sessionId: data.sessionId,
@@ -73,35 +52,22 @@ export default function Chatbot() {
       }
       
       // Refresh messages
-      if (currentSessionId || data.session) {
-        queryClient.invalidateQueries({ 
-          queryKey: ["/api/chat/sessions", currentSessionId || data.session.id, "messages"] 
-        });
-      }
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/chat/sessions", data.session?.id || variables.sessionId, "messages"] 
+      });
       
       setCurrentMessage("");
     },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
+    onError: (error: any) => {
       toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
+        title: "Error sending message",
+        description: error.message || "Something went wrong. Please try again.",
         variant: "destructive",
       });
     },
   });
 
-  // Auto-scroll to bottom
+  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -110,144 +76,198 @@ export default function Chatbot() {
     if (!currentMessage.trim()) return;
     
     sendMessageMutation.mutate({
-      content: currentMessage.trim(),
+      content: currentMessage,
       sessionId: currentSessionId || undefined,
     });
   };
 
-  const handleQuickMessage = (message: string) => {
-    setCurrentMessage(message);
-    sendMessageMutation.mutate({
-      content: message,
-      sessionId: currentSessionId || undefined,
-    });
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
   };
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
-  }
+  const startNewChat = () => {
+    setCurrentSessionId(null);
+    setCurrentMessage("");
+  };
 
-  if (!isAuthenticated) {
-    return null; // Will redirect
-  }
+  const selectSession = (sessionId: string) => {
+    setCurrentSessionId(sessionId);
+  };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Card className="overflow-hidden shadow-lg">
-          {/* Chat Header */}
-          <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mr-4">
-                  <Bot size={24} />
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid lg:grid-cols-4 gap-6 h-[calc(100vh-8rem)]">
+          {/* Chat Sessions Sidebar */}
+          <div className="lg:col-span-1 bg-white rounded-lg shadow border">
+            <div className="p-4 border-b">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold">Chat History</h2>
+                <Button
+                  onClick={startNewChat}
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  New Chat
+                </Button>
+              </div>
+            </div>
+            
+            <div className="p-2 space-y-2 overflow-y-auto h-[calc(100%-5rem)]">
+              {sessions.map((session: ChatSession) => (
+                <button
+                  key={session.id}
+                  onClick={() => selectSession(session.id)}
+                  className={`w-full text-left p-3 rounded-lg transition-colors ${
+                    currentSessionId === session.id
+                      ? "bg-blue-50 border-blue-200 border"
+                      : "hover:bg-gray-50"
+                  }`}
+                >
+                  <div className="font-medium text-sm text-gray-900 truncate">
+                    {session.title}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {new Date(session.createdAt).toLocaleDateString()}
+                  </div>
+                </button>
+              ))}
+              
+              {sessions.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No chat sessions yet.</p>
+                  <p className="text-sm mt-2">Start a new conversation!</p>
                 </div>
+              )}
+            </div>
+          </div>
+
+          {/* Chat Interface */}
+          <div className="lg:col-span-3 bg-white rounded-lg shadow border flex flex-col">
+            {/* Chat Header */}
+            <div className="p-4 border-b bg-blue-600 text-white rounded-t-lg">
+              <div className="flex items-center">
+                <Bot className="h-8 w-8 mr-3" />
                 <div>
-                  <h2 className="text-xl font-semibold">Arthik AI Assistant</h2>
-                  <p className="text-blue-100">Online • Ready to help with trading insights</p>
+                  <h1 className="text-xl font-bold">Arthik.ai Assistant</h1>
+                  <p className="text-blue-100 text-sm">Your AI financial trading companion</p>
                 </div>
               </div>
-              
-              <Button 
-                onClick={() => setLocation("/pricing")}
-                className="bg-green-600 hover:bg-green-700 text-white"
-                size="sm"
-              >
-                <Crown className="mr-2 h-4 w-4" />
-                Upgrade
-              </Button>
             </div>
-          </CardHeader>
 
-          {/* Chat Messages */}
-          <CardContent className="p-0">
-            <div className="h-96 overflow-y-auto p-6 bg-gray-50">
-              {/* Welcome Message */}
-              {messages.length === 0 && (
-                <motion.div 
-                  className="flex items-start mb-4"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
-                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center mr-3">
-                    <Bot size={16} className="text-white" />
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {!currentSessionId && messages.length === 0 && (
+                <div className="text-center py-12">
+                  <Bot className="h-16 w-16 text-blue-600 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Welcome to Arthik.ai!
+                  </h3>
+                  <p className="text-gray-600 mb-6">
+                    Ask me anything about trading, market analysis, or investment strategies.
+                  </p>
+                  <div className="grid md:grid-cols-2 gap-4 max-w-2xl mx-auto">
+                    <Button
+                      variant="outline"
+                      onClick={() => setCurrentMessage("What are the best trading strategies for beginners?")}
+                      className="text-left h-auto p-4"
+                    >
+                      <div>
+                        <div className="font-medium">Trading Strategies</div>
+                        <div className="text-sm text-gray-500">Learn beginner-friendly approaches</div>
+                      </div>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setCurrentMessage("How do I analyze stock market trends?")}
+                      className="text-left h-auto p-4"
+                    >
+                      <div>
+                        <div className="font-medium">Market Analysis</div>
+                        <div className="text-sm text-gray-500">Understand market patterns</div>
+                      </div>
+                    </Button>
                   </div>
-                  <div className="bg-white rounded-lg p-4 shadow-sm max-w-md">
-                    <p className="text-neutral-800">
-                      Hello! I'm your AI trading assistant. I can help you with market analysis, 
-                      trading strategies, portfolio management, and financial insights. What would you like to know?
-                    </p>
-                  </div>
-                </motion.div>
+                </div>
               )}
 
-              {/* Chat Messages */}
-              {messages.map((message: ChatMessage, index: number) => (
+              {messagesLoading && (
+                <div className="flex justify-center py-8">
+                  <LoadingSpinner />
+                </div>
+              )}
+
+              {messages.map((message: ChatMessage) => (
                 <motion.div
                   key={message.id}
-                  className={`flex items-start mb-4 ${message.role === 'user' ? 'justify-end' : ''}`}
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
+                  transition={{ duration: 0.3 }}
+                  className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                 >
-                  {message.role === 'assistant' && (
-                    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center mr-3">
-                      <Bot size={16} className="text-white" />
+                  <div
+                    className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                      message.role === "user"
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-100 text-gray-900"
+                    }`}
+                  >
+                    <div className="flex items-start space-x-2">
+                      {message.role === "assistant" && (
+                        <Bot className="h-5 w-5 mt-0.5 text-blue-600" />
+                      )}
+                      {message.role === "user" && (
+                        <User className="h-5 w-5 mt-0.5 text-white" />
+                      )}
+                      <div className="flex-1">
+                        <div className="text-sm whitespace-pre-wrap">
+                          {message.content}
+                        </div>
+                        <div className={`text-xs mt-1 ${
+                          message.role === "user" ? "text-blue-100" : "text-gray-500"
+                        }`}>
+                          {new Date(message.createdAt).toLocaleTimeString()}
+                        </div>
+                      </div>
                     </div>
-                  )}
-                  
-                  <div className={`rounded-lg p-4 shadow-sm max-w-md ${
-                    message.role === 'user' 
-                      ? 'bg-blue-600 text-white' 
-                      : 'bg-white text-neutral-800'
-                  }`}>
-                    <p className="whitespace-pre-wrap">{message.content}</p>
                   </div>
-
-                  {message.role === 'user' && (
-                    <div className="w-8 h-8 bg-neutral-300 rounded-full flex items-center justify-center ml-3">
-                      <User size={16} className="text-neutral-600" />
-                    </div>
-                  )}
                 </motion.div>
               ))}
 
-              {/* Loading indicator */}
               {sendMessageMutation.isPending && (
-                <div className="flex items-start mb-4">
-                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center mr-3">
-                    <Bot size={16} className="text-white" />
-                  </div>
-                  <div className="bg-white rounded-lg p-4 shadow-sm">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                      <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex justify-start"
+                >
+                  <div className="max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-gray-100">
+                    <div className="flex items-center space-x-2">
+                      <Bot className="h-5 w-5 text-blue-600" />
+                      <LoadingSpinner size="sm" />
+                      <span className="text-sm text-gray-600">Thinking...</span>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               )}
 
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Chat Input */}
-            <div className="p-6 bg-white border-t">
-              <div className="flex items-center space-x-4">
-                <div className="flex-1">
-                  <Input
-                    value={currentMessage}
-                    onChange={(e) => setCurrentMessage(e.target.value)}
-                    placeholder="Ask about stocks, trading strategies, market analysis..."
-                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                    disabled={sendMessageMutation.isPending}
-                  />
-                </div>
-                <Button 
+            {/* Message Input */}
+            <div className="p-4 border-t bg-gray-50">
+              <div className="flex space-x-2">
+                <Input
+                  value={currentMessage}
+                  onChange={(e) => setCurrentMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Ask me about trading, markets, or investments..."
+                  className="flex-1"
+                  disabled={sendMessageMutation.isPending}
+                />
+                <Button
                   onClick={handleSendMessage}
                   disabled={!currentMessage.trim() || sendMessageMutation.isPending}
                   className="bg-blue-600 hover:bg-blue-700"
@@ -255,49 +275,13 @@ export default function Chatbot() {
                   {sendMessageMutation.isPending ? (
                     <LoadingSpinner size="sm" />
                   ) : (
-                    <Send size={16} />
+                    <Send className="h-4 w-4" />
                   )}
                 </Button>
               </div>
-              
-              {/* Quick Actions */}
-              <div className="flex flex-wrap gap-2 mt-4">
-                <Button 
-                  variant="secondary" 
-                  size="sm" 
-                  onClick={() => handleQuickMessage('Market overview for today')}
-                  disabled={sendMessageMutation.isPending}
-                >
-                  Market Overview
-                </Button>
-                <Button 
-                  variant="secondary" 
-                  size="sm" 
-                  onClick={() => handleQuickMessage('Analyze my portfolio')}
-                  disabled={sendMessageMutation.isPending}
-                >
-                  Portfolio Analysis
-                </Button>
-                <Button 
-                  variant="secondary" 
-                  size="sm" 
-                  onClick={() => handleQuickMessage('Best stocks to buy now')}
-                  disabled={sendMessageMutation.isPending}
-                >
-                  Investment Ideas
-                </Button>
-                <Button 
-                  variant="secondary" 
-                  size="sm" 
-                  onClick={() => handleQuickMessage('Risk management tips')}
-                  disabled={sendMessageMutation.isPending}
-                >
-                  Risk Management
-                </Button>
-              </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );

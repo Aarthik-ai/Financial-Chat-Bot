@@ -1,109 +1,31 @@
-import {
-  pgTable,
-  text,
-  varchar,
-  timestamp,
-  jsonb,
-  index,
-  serial,
-  integer,
-  boolean,
-} from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-import { relations } from "drizzle-orm";
 
-// Session storage table for express-session
-export const sessions = pgTable(
-  "sessions",
-  {
-    sid: varchar("sid").primaryKey(),
-    sess: jsonb("sess").notNull(),
-    expire: timestamp("expire").notNull(),
-  },
-  (table) => [index("IDX_session_expire").on(table.expire)],
-);
+// Simple types for in-memory storage (no database)
+export type ChatMessage = {
+  id: string;
+  sessionId: string;
+  role: "user" | "assistant";
+  content: string;
+  createdAt: Date;
+};
 
-// User storage table with email/password authentication
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  email: varchar("email").unique().notNull(),
-  password: varchar("password").notNull(),
-  username: varchar("username").unique().notNull(),
-  firstName: varchar("first_name"),
-  lastName: varchar("last_name"),
-  profileImageUrl: varchar("profile_image_url"),
-  subscription: varchar("subscription", { enum: ["free", "pro", "enterprise"] }).default("free"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+export type ChatSession = {
+  id: string;
+  title: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type InsertChatMessage = Omit<ChatMessage, "id" | "createdAt">;
+export type InsertChatSession = Omit<ChatSession, "id" | "createdAt" | "updatedAt">;
+
+// Zod schemas for validation
+export const insertChatSessionSchema = z.object({
+  title: z.string().min(1).max(200),
 });
 
-// Chat sessions
-export const chatSessions = pgTable("chat_sessions", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
-  title: varchar("title").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+export const insertChatMessageSchema = z.object({
+  sessionId: z.string(),
+  role: z.enum(["user", "assistant"]),
+  content: z.string().min(1),
 });
-
-// Chat messages
-export const chatMessages = pgTable("chat_messages", {
-  id: serial("id").primaryKey(),
-  sessionId: integer("session_id").references(() => chatSessions.id).notNull(),
-  role: varchar("role", { enum: ["user", "assistant"] }).notNull(),
-  content: text("content").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-// Relations
-export const usersRelations = relations(users, ({ many }) => ({
-  chatSessions: many(chatSessions),
-}));
-
-export const chatSessionsRelations = relations(chatSessions, ({ one, many }) => ({
-  user: one(users, {
-    fields: [chatSessions.userId],
-    references: [users.id],
-  }),
-  messages: many(chatMessages),
-}));
-
-export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
-  session: one(chatSessions, {
-    fields: [chatMessages.sessionId],
-    references: [chatSessions.id],
-  }),
-}));
-
-// Schemas
-export const insertChatSessionSchema = createInsertSchema(chatSessions).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
-  id: true,
-  createdAt: true,
-});
-
-// User schemas for authentication
-export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const loginUserSchema = z.object({
-  username: z.string().min(1, "Username is required"),
-  password: z.string().min(1, "Password is required"),
-});
-
-// Types
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
-export type ChatSession = typeof chatSessions.$inferSelect;
-export type InsertChatSession = z.infer<typeof insertChatSessionSchema>;
-export type ChatMessage = typeof chatMessages.$inferSelect;
-export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;

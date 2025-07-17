@@ -1,32 +1,15 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./auth";
 import { generateFinancialResponse, generateChatTitle } from "./openai";
 import { insertChatSessionSchema, insertChatMessageSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
-  setupAuth(app);
-
-  // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  // Chat routes (no authentication needed)
+  app.get("/api/chat/sessions", async (req, res) => {
     try {
-      const userId = req.user.id;
-      const user = await storage.getUser(userId);
-      res.json({ ...user, password: undefined });
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
-
-  // Chat routes
-  app.get("/api/chat/sessions", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const sessions = await storage.getChatSessions(userId);
+      const sessions = await storage.getChatSessions();
       res.json(sessions);
     } catch (error) {
       console.error("Error fetching chat sessions:", error);
@@ -34,12 +17,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/chat/sessions", isAuthenticated, async (req: any, res) => {
+  app.post("/api/chat/sessions", async (req, res) => {
     try {
-      const userId = req.user.id;
-      const { title } = insertChatSessionSchema.parse({ ...req.body, userId });
+      const { title } = insertChatSessionSchema.parse(req.body);
       
-      const session = await storage.createChatSession({ title, userId });
+      const session = await storage.createChatSession({ title });
       res.json(session);
     } catch (error) {
       console.error("Error creating chat session:", error);
@@ -51,13 +33,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/chat/sessions/:sessionId/messages", isAuthenticated, async (req: any, res) => {
+  app.get("/api/chat/sessions/:sessionId/messages", async (req, res) => {
     try {
-      const sessionId = parseInt(req.params.sessionId);
-      if (isNaN(sessionId)) {
-        return res.status(400).json({ message: "Invalid session ID" });
-      }
-
+      const sessionId = req.params.sessionId;
+      
       const messages = await storage.getChatMessages(sessionId);
       res.json(messages);
     } catch (error) {
@@ -66,7 +45,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/chat/message", isAuthenticated, async (req: any, res) => {
+  app.post("/api/chat/message", async (req, res) => {
     try {
       const { sessionId, content } = req.body;
       
@@ -76,7 +55,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Add user message
       const userMessage = await storage.addChatMessage({
-        sessionId: parseInt(sessionId),
+        sessionId,
         role: "user",
         content: content.trim(),
       });
@@ -86,7 +65,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Add AI message
       const aiMessage = await storage.addChatMessage({
-        sessionId: parseInt(sessionId),
+        sessionId,
         role: "assistant",
         content: aiResponse,
       });
@@ -104,10 +83,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Auto-create chat session for first message
-  app.post("/api/chat/quick-message", isAuthenticated, async (req: any, res) => {
+  // Auto-create chat session for first message (simplified version)
+  app.post("/api/chat/quick-message", async (req, res) => {
     try {
-      const userId = req.user.id;
       const { content } = req.body;
       
       if (!content?.trim()) {
@@ -124,7 +102,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Create new session
-      const session = await storage.createChatSession({ title, userId });
+      const session = await storage.createChatSession({ title });
 
       // Add user message
       const userMessage = await storage.addChatMessage({
@@ -154,24 +132,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Failed to process message",
         error: "There was an issue processing your request. Please try again or contact support if the problem persists."
       });
-    }
-  });
-
-  // Subscription routes
-  app.post("/api/subscription/upgrade", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const { plan } = req.body;
-      
-      if (!["pro", "enterprise"].includes(plan)) {
-        return res.status(400).json({ message: "Invalid subscription plan" });
-      }
-
-      const user = await storage.updateUserSubscription(userId, plan);
-      res.json(user);
-    } catch (error) {
-      console.error("Error upgrading subscription:", error);
-      res.status(500).json({ message: "Failed to upgrade subscription" });
     }
   });
 

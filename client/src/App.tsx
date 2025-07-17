@@ -3,20 +3,16 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
-import Home from "@/pages/home";
 import Chatbot from "@/pages/chatbot";
 import Pricing from "@/pages/pricing";
-import AuthPage from "@/pages/auth-page";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 
 function Navigation() {
-  const { isAuthenticated, isLoading } = useAuth();
   const [location] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -55,27 +51,6 @@ function Navigation() {
             </div>
           </div>
 
-          {/* Auth Button */}
-          <div className="hidden md:block">
-            {!isLoading && (
-              isAuthenticated ? (
-                <Button
-                  onClick={() => window.location.href = "/api/logout"}
-                  variant="outline"
-                  className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white"
-                >
-                  Sign Out
-                </Button>
-              ) : (
-                <Link href="/auth">
-                  <Button className="bg-blue-600 text-white hover:bg-blue-700">
-                    Sign In
-                  </Button>
-                </Link>
-              )
-            )}
-          </div>
-
           {/* Mobile menu button */}
           <div className="md:hidden">
             <Button
@@ -107,23 +82,6 @@ function Navigation() {
                 {item.label}
               </Link>
             ))}
-            {!isLoading && (
-              isAuthenticated ? (
-                <Button
-                  className="w-full mt-2"
-                  onClick={() => window.location.href = "/api/logout"}
-                  variant="outline"
-                >
-                  Sign Out
-                </Button>
-              ) : (
-                <Link href="/auth">
-                  <Button className="w-full mt-2">
-                    Sign In
-                  </Button>
-                </Link>
-              )
-            )}
           </div>
         </div>
       )}
@@ -183,20 +141,11 @@ function Footer() {
 }
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
-
   return (
     <Switch>
-      {isLoading || !isAuthenticated ? (
-        <Route path="/" component={Landing} />
-      ) : (
-        <>
-          <Route path="/" component={Home} />
-        </>
-      )}
+      <Route path="/" component={Landing} />
       <Route path="/chatbot" component={Chatbot} />
       <Route path="/pricing" component={Pricing} />
-      <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -205,18 +154,16 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <div className="min-h-screen flex flex-col">
-            <Navigation />
-            <main className="flex-1">
-              <Router />
-            </main>
-            <Footer />
-          </div>
-          <Toaster />
-        </TooltipProvider>
-      </AuthProvider>
+      <TooltipProvider>
+        <div className="min-h-screen flex flex-col">
+          <Navigation />
+          <main className="flex-1">
+            <Router />
+          </main>
+          <Footer />
+        </div>
+        <Toaster />
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }

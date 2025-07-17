@@ -1,11 +1,9 @@
-import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocation } from "wouter";
 import { MessageSquare, TrendingUp, BarChart3, User } from "lucide-react";
 
 export default function Home() {
-  const { user } = useAuth();
   const [, setLocation] = useLocation();
 
   return (
@@ -14,7 +12,7 @@ export default function Home() {
         {/* Header */}
         <div className="mb-12">
           <h1 className="text-4xl font-bold text-foreground mb-4">
-            Welcome back, {user?.firstName || "Trader"}!
+            Welcome to Arthik.ai!
           </h1>
           <p className="text-xl text-muted-foreground">
             Ready to make some smart trading decisions today?
@@ -51,15 +49,15 @@ export default function Home() {
 
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Your Plan</CardTitle>
+              <CardTitle className="text-sm font-medium">Free to Use</CardTitle>
               <User className="h-4 w-4 ml-auto text-purple-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-purple-600 capitalize">
-                {user?.subscription || "Free"}
+              <div className="text-2xl font-bold text-purple-600">
+                No Login Required
               </div>
               <p className="text-xs text-muted-foreground">
-                Current subscription tier
+                Start trading conversations immediately
               </p>
             </CardContent>
           </Card>

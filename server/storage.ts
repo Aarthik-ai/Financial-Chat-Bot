@@ -1,110 +1,66 @@
 import {
-  users,
-  chatSessions,
-  chatMessages,
-  type User,
-  type InsertUser,
   type ChatSession,
   type InsertChatSession,
   type ChatMessage,
   type InsertChatMessage,
 } from "@shared/schema";
-import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { nanoid } from "nanoid";
 
 // Interface for storage operations
 export interface IStorage {
-  // User operations for email/password authentication
-  getUser(id: number): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  getUserByEmail(email: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-  updateUser(id: number, userData: Partial<InsertUser>): Promise<User>;
-  
   // Chat operations
-  getChatSessions(userId: number): Promise<ChatSession[]>;
+  getChatSessions(): Promise<ChatSession[]>;
   createChatSession(session: InsertChatSession): Promise<ChatSession>;
-  getChatMessages(sessionId: number): Promise<ChatMessage[]>;
+  getChatMessages(sessionId: string): Promise<ChatMessage[]>;
   addChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
-  updateUserSubscription(userId: number, subscription: string): Promise<User>;
 }
 
-export class DatabaseStorage implements IStorage {
-  // User operations for email/password authentication
+// In-memory storage implementation (no database needed)
+export class MemStorage implements IStorage {
+  private sessions: ChatSession[] = [];
+  private messages: ChatMessage[] = [];
 
-  async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+  async getChatSessions(): Promise<ChatSession[]> {
+    return [...this.sessions].sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user;
+  async createChatSession(sessionData: InsertChatSession): Promise<ChatSession> {
+    const session: ChatSession = {
+      id: nanoid(),
+      title: sessionData.title,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    
+    this.sessions.push(session);
+    return session;
   }
 
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user;
+  async getChatMessages(sessionId: string): Promise<ChatMessage[]> {
+    return this.messages
+      .filter(msg => msg.sessionId === sessionId)
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
   }
 
-  async createUser(userData: InsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(userData)
-      .returning();
-    return user;
-  }
-
-  async updateUser(id: number, userData: Partial<InsertUser>): Promise<User> {
-    const [user] = await db
-      .update(users)
-      .set({ ...userData, updatedAt: new Date() })
-      .where(eq(users.id, id))
-      .returning();
-    return user;
-  }
-
-  // Chat operations
-  async getChatSessions(userId: number): Promise<ChatSession[]> {
-    return await db
-      .select()
-      .from(chatSessions)
-      .where(eq(chatSessions.userId, userId))
-      .orderBy(desc(chatSessions.updatedAt));
-  }
-
-  async createChatSession(session: InsertChatSession): Promise<ChatSession> {
-    const [newSession] = await db
-      .insert(chatSessions)
-      .values(session)
-      .returning();
-    return newSession;
-  }
-
-  async getChatMessages(sessionId: number): Promise<ChatMessage[]> {
-    return await db
-      .select()
-      .from(chatMessages)
-      .where(eq(chatMessages.sessionId, sessionId))
-      .orderBy(chatMessages.createdAt);
-  }
-
-  async addChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
-    const [newMessage] = await db
-      .insert(chatMessages)
-      .values(message)
-      .returning();
-    return newMessage;
-  }
-
-  async updateUserSubscription(userId: number, subscription: string): Promise<User> {
-    const [user] = await db
-      .update(users)
-      .set({ subscription: subscription as "free" | "pro" | "enterprise", updatedAt: new Date() })
-      .where(eq(users.id, userId))
-      .returning();
-    return user;
+  async addChatMessage(messageData: InsertChatMessage): Promise<ChatMessage> {
+    const message: ChatMessage = {
+      id: nanoid(),
+      sessionId: messageData.sessionId,
+      role: messageData.role,
+      content: messageData.content,
+      createdAt: new Date(),
+    };
+    
+    this.messages.push(message);
+    
+    // Update session's updatedAt timestamp
+    const session = this.sessions.find(s => s.id === messageData.sessionId);
+    if (session) {
+      session.updatedAt = new Date();
+    }
+    
+    return message;
   }
 }
 
-export const storage = new DatabaseStorage();
+export const storage = new MemStorage();
