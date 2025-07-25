@@ -96,6 +96,7 @@ const Chatbot: React.FC = () => {
   const { messages, isLoading, isTyping, sendMessage, clearChat } = useChat();
   const [input, setInput] = useState<string>("");
   const [chatHistory, setChatHistory] = useState<string[]>([]);
+  const [isThisNewChat, setIsThisNewChat] = useState<boolean>(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -127,7 +128,8 @@ const Chatbot: React.FC = () => {
         userData = {
           uid : user.uid,
           name : user.displayName ?? "Anonymous",
-          email : user.email ?? "no-email@example.com"
+          email : user.email ?? "no-email@example.com",
+          isThisNewChat,
         }
       }
       sendMessage(input,userData);
