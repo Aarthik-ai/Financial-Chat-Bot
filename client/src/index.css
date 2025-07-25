@@ -167,3 +167,13 @@
   background: hsl(142, 76%, 26%);
   transform: translateY(-1px);
 }
+
+/* Hide scrollbar for Webkit browsers (Chrome, Safari) */
+.hide-scrollbar {
+  scrollbar-width: none;          /* Firefox */
+  -ms-overflow-style: none;       /* Internet Explorer 10+ */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;                  /* WebKit (Chrome, Safari) */
+}
