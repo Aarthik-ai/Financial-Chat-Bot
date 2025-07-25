@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { generateFinancialResponse, generateChatTitle } from "./openai";
+import { generateFinAdvisorResponse } from "./openai";
 import { insertChatSessionSchema, insertChatMessageSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -61,7 +61,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Generate AI response (with built-in fallback handling)
-      const aiResponse = await generateFinancialResponse(content);
+      const aiResponse = await generateFinAdvisorResponse(content);
       
       // Add AI message
       const aiMessage = await storage.addChatMessage({
@@ -94,12 +94,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Generate title from first message (with fallback)
       let title;
-      try {
-        title = await generateChatTitle(content);
-      } catch (error) {
-        console.log("Title generation failed, using fallback");
-        title = content.length > 50 ? content.substring(0, 50) + "..." : content;
-      }
+      // Fallback: use first 50 characters of content as title
+      title = content.length > 50 ? content.substring(0, 50) + "..." : content;
       
       // Create new session
       const session = await storage.createChatSession({ title });
@@ -112,7 +108,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Generate AI response (with built-in fallback handling)
-      const aiResponse = await generateFinancialResponse(content);
+      const aiResponse = await generateFinAdvisorResponse(content);
       
       // Add AI message
       const aiMessage = await storage.addChatMessage({

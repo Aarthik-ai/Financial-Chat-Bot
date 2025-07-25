@@ -1,6 +1,9 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { generateFinAdvisorResponse } from "./openai"; // <-- Corrected import
+import dotenv from 'dotenv';
+dotenv.config();
 
 const app = express();
 app.use(express.json());
@@ -36,6 +39,20 @@ app.use((req, res, next) => {
   next();
 });
 
+app.post("/api/chat/message", async (req: Request, res: Response) => {
+  const { message } = req.body;
+  if (!message) {
+    return res.status(400).json({ response: "No message provided." });
+  }
+  try {
+    const response = await generateFinAdvisorResponse(message);
+    res.json({ response });
+  } catch (error) {
+    console.error("Error in /api/chat/message:", error);
+    res.status(500).json({ response: "Error generating response." });
+  }
+});
+
 (async () => {
   const server = await registerRoutes(app);
 
@@ -59,7 +76,7 @@ app.use((req, res, next) => {
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  const port = 5000;
+  const port = 3000;
   const host = process.env.NODE_ENV === 'development' ? 'localhost' : '0.0.0.0';
   
   server.listen(port, host, () => {
