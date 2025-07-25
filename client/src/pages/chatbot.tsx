@@ -12,8 +12,9 @@ import { useSpeechToTextUI } from "@/hooks/useSpeechToTextUI";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import GoogleLoginPopup from "@/components/ui/google-login-popup";
 import { signOut } from "firebase/auth";
-import { auth } from "@/firebase";
-import { v4 as uuidv4 } from 'uuid';
+import { auth, db } from "@/firebase";
+import { useLocation, useParams } from "wouter";
+import { v4 as uuidv4} from "uuid"
 
 interface ChatMessageProps {
   message: Message;
@@ -94,20 +95,21 @@ const TypingIndicator = () => (
 );
 
 const Chatbot: React.FC = () => {
-  const { messages, isLoading, isTyping, sendMessage, clearChat } = useChat();
+  const { messages, isLoading, isTyping, historyChats, sendMessage, clearChat } = useChat();
   const [input, setInput] = useState<string>("");
-  const [chatHistory, setChatHistory] = useState<string[]>([]);
-  const [isThisNewChat, setIsThisNewChat] = useState<boolean>(true);
+  const params = useParams<{ id: string }>();
+  const id = params.id;
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { transcript, isListening, startListening, stopListening, statusLine } =
     useSpeechToTextUI();
-
   // Firebase Auth
   const { user, loading } = useFirebaseAuth();
   const [showLogin, setShowLogin] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [location, setLocation] = useLocation();
+
 
   const scrollToBottom = () => {
     if (scrollAreaRef.current) {
@@ -124,17 +126,21 @@ const Chatbot: React.FC = () => {
   const handleSendMessage = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (input.trim()) {
+        let isThisNewChat;
+        if (id && Array.isArray(historyChats)) {
+          isThisNewChat = historyChats.find((data) => data.chat_uid === id);
+        }
       let userData;
       if(user){
         userData = {
           uid : user.uid,
           name : user.displayName ?? "Anonymous",
           email : user.email ?? "no-email@example.com",
+          chat_uid : id,
           isThisNewChat,
         }
       }
       sendMessage(input,userData);
-      setChatHistory((prev) => [input.trim(), ...prev]);
       setInput("");
       if (textareaRef.current) {
         textareaRef.current.style.height = "auto";
@@ -155,17 +161,22 @@ const Chatbot: React.FC = () => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       if (input.trim() && !isLoading) {
-        
+        let isThisNewChat = true;
+        if (id && Array.isArray(historyChats)) {
+          isThisNewChat = !historyChats.some((data) => data.chat_uid?.trim() === id.trim());
+        }
+
         let userData;
         if(user){
           userData = {
             uid : user.uid,
             name : user.displayName ?? "Anonymous",
-            email : user.email ?? "no-email@example.com"
+            email : user.email ?? "no-email@example.com",
+            chat_uid : id,
+            isThisNewChat,
           }
         }
         sendMessage(input,userData);
-        setChatHistory((prev) => [input.trim(), ...prev]);
         setInput("");
         if (textareaRef.current) {
           textareaRef.current.style.height = "auto";
@@ -176,16 +187,13 @@ const Chatbot: React.FC = () => {
 
   const handleNewChat = () => {
     clearChat();
-    setChatHistory([]);
+    setLocation(`/chatbot/${uuidv4()}`)
   };
 
   const handleSelectChat = (chat: string) => {
     setInput(chat);
   };
 
-  const handleClearHistory = () => {
-    setChatHistory([]);
-  };
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -258,9 +266,9 @@ const Chatbot: React.FC = () => {
       >
         <div className="p-4 flex  justify-between">
           {isSidebarOpen && (
-            <div className="flex flex-col justify-center items-center w-full">
+            <div className="flex flex-col justify-center items-center w-full ">
               <img
-                src="./AarthikFlogo.svg"
+                src="/AarthikFlogo.svg"
                 alt="Aarthik Logo"
                 className="h-6 mt-2"
               />
@@ -270,6 +278,9 @@ const Chatbot: React.FC = () => {
               >
                 <Plus size={16} /> New Chat
               </Button>
+              {historyChats.map((data,index)=>{
+                return <Button onClick={()=> setLocation(`/chatbot/${data.chat_uid}`)} key={index} className="truncate w-full my-3 p-2 bg-gray-400 rounded-lg">{data.title}</Button>
+              })}
             </div>
           )}
           <Button
@@ -281,7 +292,7 @@ const Chatbot: React.FC = () => {
             {isSidebarOpen ? (
               <ChevronLeft size={24} />
             ) : (
-              <img src="./aarthikLogo.svg" alt="Aarthik Logo" className="h-6" />
+              <img src="/aarthikLogo.svg" alt="Aarthik Logo" className="h-6" />
             )}
           </Button>
         </div>
@@ -302,7 +313,7 @@ const Chatbot: React.FC = () => {
                 <div className="flex justify-center items-center mb-4">
                   <h2 className="text-4xl font-bold text-black">Welcome to </h2>
                   <img
-                    src="./Aarthik.svg"
+                    src="/Aarthik.svg"
                     alt="Aarthik Logo"
                     className="w-36 h-auto ml-2"
                   />
@@ -312,8 +323,8 @@ const Chatbot: React.FC = () => {
                 </p>
               </motion.div>
             )}
-            {messages.map((message: Message) => (
-              <ChatMessage key={message.id} message={message} />
+            {messages.map((message: Message,index) => (
+              <ChatMessage key={index} message={message} />
             ))}
             {isTyping && <TypingIndicator />}
           </AnimatePresence>

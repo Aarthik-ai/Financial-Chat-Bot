@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import Logo from "../../../public/logo.svg";
 import { useState } from "react";
 import { MdArrowOutward, MdMenu, MdClose } from "react-icons/md";
+import { v4 as uuidv4 } from 'uuid';
 
 export default function Navbar() {
   const [location, setLocation] = useLocation();
@@ -72,7 +73,7 @@ export default function Navbar() {
           <div className="hidden md:flex items-center space-x-4">
             <Button
               className="text-black bg-white border-2 text-base"
-              onClick={() => setLocation("/chatbot")}
+              onClick={() => setLocation(`/chatbot/${uuidv4()}`)}
             >
               Try Aarthik
               <MdArrowOutward />
@@ -112,7 +113,7 @@ export default function Navbar() {
               <Button
                 className="text-black bg-white border-2 text-base w-full"
                 onClick={() => {
-                  setLocation("/chatbot");
+                  setLocation(`/chatbot/${uuidv4()}`);
                   setIsOpen(false);
                 }}
               >

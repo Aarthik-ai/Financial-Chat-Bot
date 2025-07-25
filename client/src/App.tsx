@@ -20,7 +20,7 @@ function Router() {
     <AnimatePresence mode="wait">
       <Switch key={location}>
         <Route path="/" component={Home} />
-        <Route path="/chatbot" component={Chatbot} />
+        <Route path="/chatbot/:id" component={Chatbot} />
         <Route path="/pricing" component={Pricing} />
         <Route component={NotFound} />
       </Switch>

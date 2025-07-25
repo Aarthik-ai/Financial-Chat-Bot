@@ -3,9 +3,9 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { generateFinAdvisorResponse } from "./openai"; // <-- Corrected import
 import dotenv from 'dotenv';
-import { arrayUnion, doc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { arrayUnion, doc, serverTimestamp, Timestamp, updateDoc } from "firebase/firestore";
 import { v4 as uuidv4 } from 'uuid';
-import { db } from "./firebase";
+import { auth, db } from "./firebase";
 import cors from "cors"
 dotenv.config();
 
@@ -45,26 +45,13 @@ app.use((req, res, next) => {
 });
 
 app.post("/api/chat/message", async (req: Request, res: Response) => {
-  const { message, userData } = req.body;
+  const { message } = req.body;
   if (!message) {
     return res.status(400).json({ response: "No message provided." });
   }
-  
-  console.log("User Data",userData);
-  if(userData && userData?.isThisNewChat){
-    const userRef = doc(db,"users",userData.uid);
-    const newChat = {
-      chat_id : uuidv4(),
-      title : message,
-      createdAt : serverTimestamp()
-    }
-    await updateDoc(userRef,{
-      historyChats: arrayUnion(newChat)
-    })
-  }
   try {
-    // const response = await generateFinAdvisorResponse(message);
-    res.json({ response:"response" });
+    const response = await generateFinAdvisorResponse(message);
+    res.json({ response });
   } catch (error) {
     console.error("Error in /api/chat/message:", error);
     res.status(500).json({ response: "Error generating response." });
