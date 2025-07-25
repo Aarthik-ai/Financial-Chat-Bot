@@ -2,45 +2,24 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  Send,
-  Bot,
-  User,
-  Loader2,
-  Plus,
-  MessageSquare,
-  ChevronLeft,
-  ChevronRight,
-  ArrowUp,
-  Mic,
-} from "lucide-react";
+import { Loader2, Plus, ChevronLeft, ArrowUp, Mic } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useChat, Message } from "@/hooks/useChat";
 import ReactMarkdown from "react-markdown";
 import DOMPurify from "dompurify";
 import MicPulse from "@/components/MicPulse";
 import { useSpeechToTextUI } from "@/hooks/useSpeechToTextUI";
-
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import GoogleLoginPopup from "@/components/ui/google-login-popup";
+import { signOut } from "firebase/auth";
+import { auth } from "@/firebase";
 
-// Define types for Message (assuming structure from useChat hook)
 interface ChatMessageProps {
   message: Message;
 }
 
-// Define props for ChatHistory component
-interface ChatHistoryProps {
-  history: string[];
-  onSelect: (chat: string) => void;
-  onClear: () => void;
-  isCollapsed: boolean;
-}
-
 const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
-  const sanitizedMarkdown = DOMPurify.sanitize(message.text, {
-    // Strip all HTML, keep markdown
-  });
+  const sanitizedMarkdown = DOMPurify.sanitize(message.text);
 
   return (
     <motion.div
@@ -120,17 +99,13 @@ const Chatbot: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const {
-    transcript,
-    isListening,
-    startListening,
-    stopListening,
-    statusLine,
-  } = useSpeechToTextUI();
+  const { transcript, isListening, startListening, stopListening, statusLine } =
+    useSpeechToTextUI();
 
   // Firebase Auth
   const { user, loading } = useFirebaseAuth();
   const [showLogin, setShowLogin] = useState(false);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
 
   const scrollToBottom = () => {
     if (scrollAreaRef.current) {
@@ -152,7 +127,7 @@ const Chatbot: React.FC = () => {
       setChatHistory((prev) => [input.trim(), ...prev]);
       setInput("");
       if (textareaRef.current) {
-        textareaRef.current.style.height = "auto"; // Reset height after sending
+        textareaRef.current.style.height = "auto";
       }
     }
   };
@@ -161,24 +136,23 @@ const Chatbot: React.FC = () => {
     setInput(e.target.value);
     const textarea = textareaRef.current;
     if (textarea) {
-      textarea.style.height = "auto"; // Reset height
-      textarea.style.height = `${Math.min(textarea.scrollHeight, 280)}px`; // Set to content height or max 120px
+      textarea.style.height = "auto";
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 280)}px`;
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault(); // Prevent new line
+      e.preventDefault();
       if (input.trim() && !isLoading) {
         sendMessage(input);
         setChatHistory((prev) => [input.trim(), ...prev]);
         setInput("");
         if (textareaRef.current) {
-          textareaRef.current.style.height = "auto"; // Reset height after sending
+          textareaRef.current.style.height = "auto";
         }
       }
     }
-    // Shift + Enter will add a new line by default (no need to handle explicitly)
   };
 
   const handleNewChat = () => {
@@ -194,10 +168,14 @@ const Chatbot: React.FC = () => {
     setChatHistory([]);
   };
 
-  // UI: Top right login button
+  const handleLogout = async () => {
+    await signOut(auth);
+    setShowProfileDropdown(false);
+  };
+
+  // UI: Top right login/profile button with dropdown
   const renderLoginButton = () => (
     <div className="absolute top-6 right-8 z-50">
-      {console.log(user?.photoURL)}
       {!loading && !user ? (
         <Button
           className="bg-gradient-to-r from-[#74CAFC] to-[#7978FF] text-white font-bold px-6 py-2 rounded-full shadow-md"
@@ -207,14 +185,42 @@ const Chatbot: React.FC = () => {
         </Button>
       ) : (
         user && (
-          <div className="flex items-center gap-2">
-            <Avatar>
-              <img
-                src={user?.photoURL ?? ""}
-                alt={user.displayName ?? "User"}
-              />
-            </Avatar>
-            <span className="font-semibold">{user.displayName}</span>
+          <div className="relative">
+            <div
+              className="flex items-center gap-2 cursor-pointer px-2 py-1 rounded-lg hover:bg-gray-100 transition-all"
+              onClick={() => setShowProfileDropdown((prev) => !prev)}
+              style={{
+                alignItems: "center",
+                verticalAlign: "middle",
+              }} /* Added for extra control */
+            >
+              <Avatar className="flex items-center justify-center">
+                {user?.photoURL ? (
+                  <img
+                    src={user.photoURL}
+                    alt={user.displayName ?? "User"}
+                    className="rounded-full w-8 h-8 object-cover"
+                  />
+                ) : (
+                  <AvatarFallback className="w-8 h-8 flex items-center justify-center text-white bg-orange-500 rounded-full">
+                    {user.displayName?.[0] ?? "U"}
+                  </AvatarFallback>
+                )}
+              </Avatar>
+              <span className="font-semibold leading-none">
+                {user.displayName}
+              </span>
+            </div> 
+            {showProfileDropdown && (
+              <div className="absolute right-0 mt-2 w-40 bg-white border rounded-lg shadow-lg z-50">
+                <button
+                  className="w-full text-left px-4 py-2 hover:bg-gradient-to-r hover:from-[#74CAFC] hover:to-[#7978FF] hover:text-white transition-colors rounded-lg"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </button>
+              </div>
+            )}
           </div>
         )
       )}
@@ -305,14 +311,21 @@ const Chatbot: React.FC = () => {
               onChange={handleTextareaChange}
               onKeyDown={handleKeyDown}
               placeholder="Ask any finance-related question..."
-              className={`flex-1 px-2 focus:outline-none resize-none min-h-[2rem] max-h-[15rem] overflow-y-auto border-none`}
+              className="flex-1 px-2 focus:outline-none resize-none min-h-[2rem] max-h-[15rem] overflow-y-auto border-none"
               disabled={isLoading}
               rows={1}
-              />
+            />
             <Button
               type="button"
               className="relative rounded-full bg-gradient-to-r from-[#74CAFC] to-[#7978FF] text-white w-12 h-12 flex-shrink-0 shadow-md transition-all duration-300 font-bold"
-              onClick={isListening ? () => {stopListening();setInput((prev)=> prev + " " + transcript)} : startListening}
+              onClick={
+                isListening
+                  ? () => {
+                      stopListening();
+                      setInput((prev) => prev + " " + transcript);
+                    }
+                  : startListening
+              }
             >
               <Mic />
               {isListening && (
