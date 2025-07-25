@@ -197,6 +197,7 @@ const Chatbot: React.FC = () => {
   // UI: Top right login button
   const renderLoginButton = () => (
     <div className="absolute top-6 right-8 z-50">
+      {console.log(user?.photoURL)}
       {!loading && !user ? (
         <Button
           className="bg-gradient-to-r from-[#74CAFC] to-[#7978FF] text-white font-bold px-6 py-2 rounded-full shadow-md"
@@ -209,11 +210,9 @@ const Chatbot: React.FC = () => {
           <div className="flex items-center gap-2">
             <Avatar>
               <img
-                src={user.photoURL ?? ""}
+                src={user?.photoURL ?? ""}
                 alt={user.displayName ?? "User"}
-                className="rounded-full w-8 h-8"
               />
-              <AvatarFallback>{user.displayName?.[0] ?? "U"}</AvatarFallback>
             </Avatar>
             <span className="font-semibold">{user.displayName}</span>
           </div>
