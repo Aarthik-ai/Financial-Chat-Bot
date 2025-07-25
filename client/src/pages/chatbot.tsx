@@ -13,6 +13,7 @@ import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import GoogleLoginPopup from "@/components/ui/google-login-popup";
 import { signOut } from "firebase/auth";
 import { auth } from "@/firebase";
+import { v4 as uuidv4 } from 'uuid';
 
 interface ChatMessageProps {
   message: Message;

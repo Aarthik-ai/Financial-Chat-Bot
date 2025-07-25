@@ -3,14 +3,16 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { generateFinAdvisorResponse } from "./openai"; // <-- Corrected import
 import dotenv from 'dotenv';
-import { db } from "@/firebase";
 import { arrayUnion, doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { v4 as uuidv4 } from 'uuid';
+import { db } from "./firebase";
+import cors from "cors"
 dotenv.config();
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(cors());
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -47,6 +49,7 @@ app.post("/api/chat/message", async (req: Request, res: Response) => {
   if (!message) {
     return res.status(400).json({ response: "No message provided." });
   }
+  
   console.log("User Data",userData);
   if(userData && userData?.isThisNewChat){
     const userRef = doc(db,"users",userData.uid);

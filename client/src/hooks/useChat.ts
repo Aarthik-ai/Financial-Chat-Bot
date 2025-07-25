@@ -17,13 +17,16 @@ interface UserMetaData {
 // Call your backend API instead of simulating a response
 const getBotResponse = async (message: string, userData: any): Promise<string> => {
   try {
-    const response = await fetch('/api/chat/message', {
+    console.log("Hello");
+    const response = await fetch('http://localhost:3000/api/chat/message', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message, userData }),
     });
     if (!response.ok) {
-      throw new Error('Failed to get response from server');
+      console.log(response);
+      return "0";
+      // throw new Error('Failed to get response from server');
     }
     const data = await response.json();
     return data.response || "Sorry, I couldn't generate a response.";
