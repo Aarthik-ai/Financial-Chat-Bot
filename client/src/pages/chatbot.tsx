@@ -18,6 +18,9 @@ import { useChat, Message } from "@/hooks/useChat";
 import ReactMarkdown from "react-markdown";
 import DOMPurify from "dompurify";
 
+import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
+import GoogleLoginPopup from "@/components/ui/google-login-popup";
+
 // Define types for Message (assuming structure from useChat hook)
 interface ChatMessageProps {
   message: Message;
@@ -115,6 +118,10 @@ const Chatbot: React.FC = () => {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Firebase Auth
+  const { user, loading } = useFirebaseAuth();
+  const [showLogin, setShowLogin] = useState(false);
+
   const scrollToBottom = () => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTo({
@@ -177,8 +184,38 @@ const Chatbot: React.FC = () => {
     setChatHistory([]);
   };
 
+  // UI: Top right login button
+  const renderLoginButton = () => (
+    <div className="absolute top-6 right-8 z-50">
+      {!loading && !user ? (
+        <Button
+          className="bg-gradient-to-r from-[#74CAFC] to-[#7978FF] text-white font-bold px-6 py-2 rounded-full shadow-md"
+          onClick={() => setShowLogin(true)}
+        >
+          Login
+        </Button>
+      ) : (
+        user && (
+          <div className="flex items-center gap-2">
+            <Avatar>
+              <img
+                src={user.photoURL ?? ""}
+                alt={user.displayName ?? "User"}
+                className="rounded-full w-8 h-8"
+              />
+              <AvatarFallback>{user.displayName?.[0] ?? "U"}</AvatarFallback>
+            </Avatar>
+            <span className="font-semibold">{user.displayName}</span>
+          </div>
+        )
+      )}
+      {showLogin && <GoogleLoginPopup onClose={() => setShowLogin(false)} />}
+    </div>
+  );
+
   return (
-    <div className="flex h-screen bg-white font-sans">
+    <div className="flex h-screen bg-white font-sans relative">
+      {renderLoginButton()}
       <motion.aside
         initial={{ width: "15%" }}
         animate={{ width: isSidebarOpen ? "15%" : "64px" }}
@@ -271,7 +308,6 @@ const Chatbot: React.FC = () => {
               {isLoading ? (
                 <Loader2 className="h-6 w-6 animate-spin" />
               ) : (
-                // <Send className="h-6 w-6" />
                 <ArrowUp />
               )}
             </Button>
