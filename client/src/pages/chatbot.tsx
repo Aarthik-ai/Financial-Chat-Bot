@@ -12,11 +12,14 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowUp,
+  Mic,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useChat, Message } from "@/hooks/useChat";
 import ReactMarkdown from "react-markdown";
 import DOMPurify from "dompurify";
+import MicPulse from "@/components/MicPulse";
+import { useSpeechToTextUI } from "@/hooks/useSpeechToTextUI";
 
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import GoogleLoginPopup from "@/components/ui/google-login-popup";
@@ -117,6 +120,13 @@ const Chatbot: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const {
+    transcript,
+    isListening,
+    startListening,
+    stopListening,
+    statusLine,
+  } = useSpeechToTextUI();
 
   // Firebase Auth
   const { user, loading } = useFirebaseAuth();
@@ -296,10 +306,23 @@ const Chatbot: React.FC = () => {
               onChange={handleTextareaChange}
               onKeyDown={handleKeyDown}
               placeholder="Ask any finance-related question..."
-              className="flex-1 px-2 focus:outline-none resize-none min-h-[2rem] max-h-[15rem] overflow-y-auto border-none"
+              className={`flex-1 px-2 focus:outline-none resize-none min-h-[2rem] max-h-[15rem] overflow-y-auto border-none`}
               disabled={isLoading}
               rows={1}
-            />
+              />
+            <Button
+              type="button"
+              className="relative rounded-full bg-gradient-to-r from-[#74CAFC] to-[#7978FF] text-white w-12 h-12 flex-shrink-0 shadow-md transition-all duration-300 font-bold"
+              onClick={isListening ? () => {stopListening();setInput((prev)=> prev + " " + transcript)} : startListening}
+            >
+              <Mic />
+              {isListening && (
+                <div className="absolute">
+                  <MicPulse />
+                </div>
+              )}
+            </Button>
+
             <Button
               type="submit"
               className="rounded-full bg-gradient-to-r from-[#74CAFC] to-[#7978FF] text-white w-12 h-12 flex-shrink-0 shadow-md transition-all duration-300 font-bold"
