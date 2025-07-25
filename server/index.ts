@@ -1,4 +1,4 @@
-import express, { type Request, Response, NextFunction } from "express";
+import express, { type Request, Response, NextFunction, response } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { generateFinAdvisorResponse } from "./openai"; // <-- Corrected import
@@ -40,13 +40,17 @@ app.use((req, res, next) => {
 });
 
 app.post("/api/chat/message", async (req: Request, res: Response) => {
-  const { message } = req.body;
+  const { message, userData } = req.body;
   if (!message) {
     return res.status(400).json({ response: "No message provided." });
   }
+  console.log("User Data",userData);
+  if(userData){
+    console.log("userData");
+  }
   try {
-    const response = await generateFinAdvisorResponse(message);
-    res.json({ response });
+    // const response = await generateFinAdvisorResponse(message);
+    res.json({ response:"response" });
   } catch (error) {
     console.error("Error in /api/chat/message:", error);
     res.status(500).json({ response: "Error generating response." });

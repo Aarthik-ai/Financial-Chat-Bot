@@ -7,13 +7,20 @@ export interface Message {
   timestamp: string;
 }
 
+// Define User Meta Data for sendMessage
+interface UserMetaData {
+  uid: string;
+  name: string;
+  email: string;
+}
+
 // Call your backend API instead of simulating a response
-const getBotResponse = async (message: string): Promise<string> => {
+const getBotResponse = async (message: string, userData: any): Promise<string> => {
   try {
     const response = await fetch('/api/chat/message', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ message, userData }),
     });
     if (!response.ok) {
       throw new Error('Failed to get response from server');
@@ -31,7 +38,7 @@ export const useChat = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
 
-  const sendMessage = async (text: string) => {
+  const sendMessage = async (text: string, userData: any) => {
     if (!text.trim()) return;
 
     const userMessage: Message = {
@@ -45,7 +52,7 @@ export const useChat = () => {
     setIsTyping(true);
 
     try {
-      const botText = await getBotResponse(text);
+      const botText = await getBotResponse(text,userData);
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
         text: botText,

@@ -140,7 +140,6 @@ const Chatbot: React.FC = () => {
       });
     }
   };
-
   useEffect(() => {
     scrollToBottom();
   }, [messages, isTyping]);
@@ -148,7 +147,15 @@ const Chatbot: React.FC = () => {
   const handleSendMessage = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (input.trim()) {
-      sendMessage(input);
+      let userData;
+      if(user){
+        userData = {
+          uid : user.uid,
+          name : user.displayName ?? "Anonymous",
+          email : user.email ?? "no-email@example.com"
+        }
+      }
+      sendMessage(input,userData);
       setChatHistory((prev) => [input.trim(), ...prev]);
       setInput("");
       if (textareaRef.current) {
@@ -170,7 +177,16 @@ const Chatbot: React.FC = () => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault(); // Prevent new line
       if (input.trim() && !isLoading) {
-        sendMessage(input);
+        
+        let userData;
+        if(user){
+          userData = {
+            uid : user.uid,
+            name : user.displayName ?? "Anonymous",
+            email : user.email ?? "no-email@example.com"
+          }
+        }
+        sendMessage(input,userData);
         setChatHistory((prev) => [input.trim(), ...prev]);
         setInput("");
         if (textareaRef.current) {
@@ -197,7 +213,6 @@ const Chatbot: React.FC = () => {
   // UI: Top right login button
   const renderLoginButton = () => (
     <div className="absolute top-6 right-8 z-50">
-      {console.log(user?.photoURL)}
       {!loading && !user ? (
         <Button
           className="bg-gradient-to-r from-[#74CAFC] to-[#7978FF] text-white font-bold px-6 py-2 rounded-full shadow-md"
