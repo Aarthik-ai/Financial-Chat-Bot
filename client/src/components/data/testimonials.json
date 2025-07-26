@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "name": "Soham Chavan",
+    "username": "@Sohu",
+    "image": "/testimonials/sample.svg",
+    "text": "Best financial assistant I’ve ever used! I asked a basic question about credit scores and got a thorough, jargon-free answer in seconds. The clarity and speed blew me away. It feels like having a financial advisor on–call — without the price tag."
+  },
+  {
+    "id": 2,
+    "name": "Nikhil Kumar",
+    "username": "@Niku",
+    "image": "/testimonials/sample.svg",
+    "text": "Best financial assistant I’ve ever used! I asked a basic question about credit scores and got a thorough, jargon-free answer in seconds. The clarity and speed blew me away. It feels like having a financial advisor on–call — without the price tag."
+  },
+  {
+    "id": 3,
+    "name": "Shrawan Kumar",
+    "username": "@Suru",
+    "image": "/testimonials/sample.svg",
+    "text": "Best financial assistant I’ve ever used! I asked a basic question about credit scores and got a thorough, jargon-free answer in seconds. The clarity and speed blew me away. It feels like having a financial advisor on–call — without the price tag."
+  }
+]
