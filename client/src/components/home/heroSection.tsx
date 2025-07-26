@@ -1,15 +1,16 @@
-import { useState } from 'react';
-import { MouseEvent, KeyboardEvent } from 'react';
+import { useState, KeyboardEvent, MouseEvent } from 'react';
+import { useLocation } from 'wouter';
 
-export default function heroSection(){
+export default function HeroSection() {
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [, setLocation] = useLocation();
 
   const handleSearch = (e?: MouseEvent<HTMLImageElement>) => {
     if (e) e.preventDefault();
     if (searchQuery.trim()) {
-      window.location.href = `/chat?message=${encodeURIComponent(searchQuery)}`;
+      setLocation(`/chat?message=${encodeURIComponent(searchQuery)}`);
     } else {
-      window.location.href = '/chat';
+      setLocation('/chat');
     }
   };
 
@@ -23,7 +24,7 @@ export default function heroSection(){
     <div
       className="min-h-screen flex flex-col items-center justify-center px-4 text-center"
       style={{
-        backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><rect width='100%' height='100%' fill='white'/><path d='M 40 0 L 0 0 0 40' fill='none' stroke='%23E4F5FF' stroke-width='1'/></svg>")`,
+        backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><rect width='100%' height='100%' fill='none'/><path d='M 40 0 L 0 0 0 40' fill='none' stroke='%23E4F5FF' stroke-width='1'/><path d='M0 0 H40 M0 0 V40' stroke='%23E4F5FF' stroke-width='0.5'/></svg>")`,
         backgroundRepeat: "repeat",
       }}
     >
@@ -50,7 +51,7 @@ export default function heroSection(){
             placeholder="What are the top 5 AI stocks in 2025?"
             className="flex-grow outline-none text-gray-700 bg-white"
             value={searchQuery}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+            onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={handleKeyPress}
           />
           <img
@@ -65,18 +66,17 @@ export default function heroSection(){
       <div className="flex gap-4">
         <button
           className="px-6 py-2 rounded-lg text-white font-medium bg-gradient-to-r from-[#4686FE] to-[#87B0FF] shadow-lg cursor-pointer"
-          onClick={() => (window.location.href = '/chat')}
+          onClick={() => setLocation('/chat')}
         >
           Try For Free
         </button>
         <button
           className="bg-white px-6 py-2 rounded-lg border border-gray-300 font-medium hover:bg-gray-100 cursor-pointer shadow-lg"
-          onClick={() => (window.location.href = '/register')}
+          onClick={() => setLocation('/register')}
         >
           Register ↗
         </button>
       </div>
     </div>
   );
-};
-
+}
