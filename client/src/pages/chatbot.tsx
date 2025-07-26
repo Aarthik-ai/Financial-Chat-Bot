@@ -95,7 +95,7 @@ const TypingIndicator = () => (
 );
 
 const Chatbot: React.FC = () => {
-  const { messages, isLoading, isTyping, historyChats, sendMessage, clearChat } = useChat();
+  const { messages, isLoading, isTyping, historyChats, setHistoryChats, sendMessage, clearChat } = useChat();
   const [input, setInput] = useState<string>("");
   const params = useParams<{ id: string }>();
   const id = params.id;
@@ -242,7 +242,7 @@ const Chatbot: React.FC = () => {
               <div className="absolute right-0 mt-2 w-40 bg-white border rounded-lg shadow-lg z-50">
                 <button
                   className="w-full text-left px-4 py-2 hover:bg-gradient-to-r hover:from-[#74CAFC] hover:to-[#7978FF] hover:text-white transition-colors rounded-lg"
-                  onClick={handleLogout}
+                  onClick={()=>{handleLogout();setHistoryChats([]);clearChat();}}
                 >
                   Logout
                 </button>

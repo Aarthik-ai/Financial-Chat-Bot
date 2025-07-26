@@ -154,5 +154,5 @@ export const useChat = () => {
     setMessages([]);
   };
 
-  return { messages, isLoading, isTyping, historyChats, sendMessage, clearChat };
+  return { messages, isLoading, isTyping, historyChats, setHistoryChats, sendMessage, clearChat };
 };
