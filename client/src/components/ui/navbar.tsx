@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import Logo from "../../../public/logo.svg";
 import { useState } from "react";
 import { MdArrowOutward, MdMenu, MdClose } from "react-icons/md";
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 
 export default function Navbar() {
   const [location, setLocation] = useLocation();
@@ -72,7 +72,7 @@ export default function Navbar() {
           {/* Desktop Button */}
           <div className="hidden md:flex items-center space-x-4">
             <Button
-              className="text-black bg-white border-2 text-base"
+              className="ripple-button text-black bg-white border-2 text-base rounded-full px-4 py-2 flex items-center gap-2 hover:shadow-md duration-500"
               onClick={() => setLocation(`/chatbot/${uuidv4()}`)}
             >
               Try Aarthik

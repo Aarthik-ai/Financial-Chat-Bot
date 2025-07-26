@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Loader2, Plus, ChevronLeft, ArrowUp, Mic } from "lucide-react";
+import { Loader2, PanelRight, ArrowUp, Mic, SquarePen } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useChat, Message } from "@/hooks/useChat";
 import ReactMarkdown from "react-markdown";
@@ -14,7 +14,7 @@ import GoogleLoginPopup from "@/components/ui/google-login-popup";
 import { signOut } from "firebase/auth";
 import { auth, db } from "@/firebase";
 import { useLocation, useParams } from "wouter";
-import { v4 as uuidv4} from "uuid"
+import { v4 as uuidv4 } from "uuid";
 
 interface ChatMessageProps {
   message: Message;
@@ -95,7 +95,15 @@ const TypingIndicator = () => (
 );
 
 const Chatbot: React.FC = () => {
-  const { messages, isLoading, isTyping, historyChats, setHistoryChats, sendMessage, clearChat } = useChat();
+  const {
+    messages,
+    isLoading,
+    isTyping,
+    historyChats,
+    setHistoryChats,
+    sendMessage,
+    clearChat,
+  } = useChat();
   const [input, setInput] = useState<string>("");
   const params = useParams<{ id: string }>();
   const id = params.id;
@@ -109,7 +117,6 @@ const Chatbot: React.FC = () => {
   const [showLogin, setShowLogin] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [location, setLocation] = useLocation();
-
 
   const scrollToBottom = () => {
     if (scrollAreaRef.current) {
@@ -126,21 +133,21 @@ const Chatbot: React.FC = () => {
   const handleSendMessage = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (input.trim()) {
-        let isThisNewChat;
-        if (id && Array.isArray(historyChats)) {
-          isThisNewChat = historyChats.find((data) => data.chat_uid === id);
-        }
-      let userData;
-      if(user){
-        userData = {
-          uid : user.uid,
-          name : user.displayName ?? "Anonymous",
-          email : user.email ?? "no-email@example.com",
-          chat_uid : id,
-          isThisNewChat,
-        }
+      let isThisNewChat;
+      if (id && Array.isArray(historyChats)) {
+        isThisNewChat = historyChats.find((data) => data.chat_uid === id);
       }
-      sendMessage(input,userData);
+      let userData;
+      if (user) {
+        userData = {
+          uid: user.uid,
+          name: user.displayName ?? "Anonymous",
+          email: user.email ?? "no-email@example.com",
+          chat_uid: id,
+          isThisNewChat,
+        };
+      }
+      sendMessage(input, userData);
       setInput("");
       if (textareaRef.current) {
         textareaRef.current.style.height = "auto";
@@ -163,20 +170,22 @@ const Chatbot: React.FC = () => {
       if (input.trim() && !isLoading) {
         let isThisNewChat = true;
         if (id && Array.isArray(historyChats)) {
-          isThisNewChat = !historyChats.some((data) => data.chat_uid?.trim() === id.trim());
+          isThisNewChat = !historyChats.some(
+            (data) => data.chat_uid?.trim() === id.trim()
+          );
         }
 
         let userData;
-        if(user){
+        if (user) {
           userData = {
-            uid : user.uid,
-            name : user.displayName ?? "Anonymous",
-            email : user.email ?? "no-email@example.com",
-            chat_uid : id,
+            uid: user.uid,
+            name: user.displayName ?? "Anonymous",
+            email: user.email ?? "no-email@example.com",
+            chat_uid: id,
             isThisNewChat,
-          }
+          };
         }
-        sendMessage(input,userData);
+        sendMessage(input, userData);
         setInput("");
         if (textareaRef.current) {
           textareaRef.current.style.height = "auto";
@@ -187,13 +196,12 @@ const Chatbot: React.FC = () => {
 
   const handleNewChat = () => {
     clearChat();
-    setLocation(`/chatbot/${uuidv4()}`)
+    setLocation(`/chatbot/${uuidv4()}`);
   };
 
   const handleSelectChat = (chat: string) => {
     setInput(chat);
   };
-
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -204,12 +212,20 @@ const Chatbot: React.FC = () => {
   const renderLoginButton = () => (
     <div className="absolute top-6 right-8 z-50">
       {!loading && !user ? (
-        <Button
-          className="bg-gradient-to-r from-[#74CAFC] to-[#7978FF] text-white font-bold px-6 py-2 rounded-full shadow-md"
-          onClick={() => setShowLogin(true)}
-        >
-          Login
-        </Button>
+        <div>
+          <Button
+            className="text-white bg-black border-2 text-base mr-2 rounded-full"
+            onClick={() => setShowLogin(true)}
+          >
+            Login
+          </Button>
+          <Button
+            className="text-black bg-white border-2 text-base rounded-full"
+            onClick={() => setShowLogin(true)}
+          >
+            Sign up for free
+          </Button>
+        </div>
       ) : (
         user && (
           <div className="relative">
@@ -237,15 +253,19 @@ const Chatbot: React.FC = () => {
               <span className="font-semibold leading-none">
                 {user.displayName}
               </span>
-            </div> 
+            </div>
             {showProfileDropdown && (
               <div className="absolute right-0 mt-2 w-40 bg-white border rounded-lg shadow-lg z-50">
-                <button
-                  className="w-full text-left px-4 py-2 hover:bg-gradient-to-r hover:from-[#74CAFC] hover:to-[#7978FF] hover:text-white transition-colors rounded-lg"
-                  onClick={()=>{handleLogout();setHistoryChats([]);clearChat();}}
+                <div
+                  className="w-full text-left px-4 py-2 text-base font-semibold flex justify-center hover:bg-black hover:text-white rounded-lg"
+                  onClick={() => {
+                    handleLogout();
+                    setHistoryChats([]);
+                    clearChat();
+                  }}
                 >
                   Logout
-                </button>
+                </div>
               </div>
             )}
           </div>
@@ -259,42 +279,68 @@ const Chatbot: React.FC = () => {
     <div className="flex h-screen bg-white font-sans relative">
       {renderLoginButton()}
       <motion.aside
-        initial={{ width: "15%" }}
-        animate={{ width: isSidebarOpen ? "15%" : "64px" }}
+        initial={{ width: "13%" }}
+        animate={{ width: isSidebarOpen ? "13%" : "64px" }}
         transition={{ duration: 0.3 }}
         className="bg-white dark:bg-neutral-800/80 border-r dark:border-neutral-700/30 flex flex-col shadow-lg"
       >
-        <div className="p-4 flex  justify-between">
+        <div className=" flex  justify-between">
           {isSidebarOpen && (
-            <div className="flex flex-col justify-center items-center w-full ">
-              <img
-                src="/AarthikFlogo.svg"
-                alt="Aarthik Logo"
-                className="h-6 mt-2"
-              />
-              <Button
+            <div className="flex flex-col px-6 py-4 justify-start items-start w-full ">
+              <div className="flex justify-between w-full items-center">
+                <img
+                  src="/aarthikLogo.svg"
+                  alt="Aarthik Logo"
+                  className="h-6 mt-2"
+                />
+                <div
+                  onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                  className="text-gray-600"
+                >
+                  <PanelRight size={16}   />
+                </div>
+              </div>
+              <div
                 onClick={handleNewChat}
-                className="justify-start gap-2 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white rounded-lg transition-all duration-300 px-4 py-2 text-sm mt-8"
+                className="justify-start gap-2 bg-white  text-black rounded-lg transition-all duration-300 text-base mt-8 flex items-center font-semibold"
               >
-                <Plus size={16} /> New Chat
-              </Button>
-              {historyChats.map((data,index)=>{
-                return <Button onClick={()=> setLocation(`/chatbot/${data.chat_uid}`)} key={index} className="truncate w-full my-3 p-2 bg-gray-400 rounded-lg">{data.title}</Button>
-              })}
+                <SquarePen size={16} /> New Chat
+              </div>
+              <p className="font-semibold text-base mt-6 mb-2 text-black/80">
+                Chats
+              </p>
+              <div>
+                {historyChats.map((data, index) => {
+                  return (
+                    <div
+                      onClick={() => setLocation(`/chatbot/${data.chat_uid}`)}
+                      key={index}
+                      className="truncate w-full text-base font-semibold mt-2 rounded-lg"
+                    >
+                      {data.title}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="text-neutral-600 "
-          >
-            {isSidebarOpen ? (
-              <ChevronLeft size={24} />
-            ) : (
-              <img src="/aarthikLogo.svg" alt="Aarthik Logo" className="h-6" />
-            )}
-          </Button>
+          {!isSidebarOpen && (
+            <div className="w-full h-full" onClick={() => setIsSidebarOpen(true)}>
+              <div className="flex flex-col mt-6"  >
+                <img
+                  src="/aarthikLogo.svg"
+                  alt="Aarthik Logo"
+                  className="h-6"
+                />
+              </div>
+              <div
+                onClick={handleNewChat}
+                className="mt-8 w-full flex items-center justify-center"
+              >
+                <SquarePen size={18} strokeWidth={2}/>
+              </div>
+            </div>
+          )}
         </div>
       </motion.aside>
 
@@ -323,7 +369,7 @@ const Chatbot: React.FC = () => {
                 </p>
               </motion.div>
             )}
-            {messages.map((message: Message,index) => (
+            {messages.map((message: Message, index) => (
               <ChatMessage key={index} message={message} />
             ))}
             {isTyping && <TypingIndicator />}
@@ -341,7 +387,7 @@ const Chatbot: React.FC = () => {
               onChange={handleTextareaChange}
               onKeyDown={handleKeyDown}
               placeholder="Ask any finance-related question..."
-              className="flex-1 px-2 focus:outline-none resize-none min-h-[2rem] max-h-[15rem] overflow-y-auto border-none"
+              className="flex-1 px-2 focus:outline-none resize-none min-h-[1rem] max-h-[15rem] overflow-y-auto border-none"
               disabled={isLoading}
               rows={1}
             />

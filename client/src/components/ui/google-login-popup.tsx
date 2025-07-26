@@ -40,26 +40,29 @@ export default function GoogleLoginPopup({ onClose }: { onClose: () => void }) {
 
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 transition-opacity duration-300 ease-in-out opacity-100">
-      <div className="bg-white rounded-2xl shadow-lg p-6 flex flex-col items-center border border-[#74CAFC] min-w-[320px] max-w-[400px] transform transition-all duration-300 ease-in-out scale-100 hover:scale-[1.01]">
-        <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-[#74CAFC] to-[#7978FF] bg-clip-text text-transparent drop-shadow-md">
-          Sign in with Google
-        </h2>
-        <Button
-          className="bg-gradient-to-r from-[#74CAFC] to-[#7978FF] text-white font-semibold px-6 py-2 rounded-full shadow-md mb-4 flex items-center gap-2 hover:shadow-lg transition-shadow duration-200"
-          onClick={handleGoogleSignIn}
-        >
-          <span className="w-5 h-5 bg-gray-300 rounded-full" /> {/* Placeholder for Google icon */}
-          Sign in with Google
-        </Button>
-        <Button
-          variant="ghost"
-          className="mt-2 text-[#7978FF] hover:bg-[#f0f4ff] rounded-full px-4 py-2 hover:text-[#5a5ad2] transition-colors duration-200"
-          onClick={onClose}
-        >
-          Cancel
-        </Button>
-      </div>
-    </div>
+   <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div className="bg-white rounded-xl shadow-xl p-6 flex flex-col items-center border border-gray-200 min-w-[320px] max-w-[400px] transition-all duration-300 ease-in-out scale-100 hover:scale-[1.01]">
+    <h2 className="text-xl font-semibold mb-6 text-gray-800">
+      Sign in with Google
+    </h2>
+
+    <Button
+      className="bg-gradient-to-r from-[#74CAFC] to-[#7978FF] text-white font-medium px-6 py-2 rounded-full shadow-sm mb-4 flex items-center gap-2 transition-colors duration-200"
+      onClick={handleGoogleSignIn}
+    >
+      <span className="w-5 h-5 bg-gray-200 rounded-full" /> {/* Placeholder for Google icon */}
+      Sign in with Google
+    </Button>
+
+    <Button
+      variant="ghost"
+      className="mt-2 text-gray-500 hover:bg-gray-100 rounded-full px-4 py-2 transition-colors duration-200"
+      onClick={onClose}
+    >
+      Cancel
+    </Button>
+  </div>
+</div>
+
   );
 }
