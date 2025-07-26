@@ -10,7 +10,7 @@ export default function HeroSection() {
     if (searchQuery.trim()) {
       setLocation(`/chat?message=${encodeURIComponent(searchQuery)}`);
     } else {
-      setLocation('/chat');
+      setLocation('/chatbot');
     }
   };
 
