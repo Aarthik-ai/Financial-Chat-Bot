@@ -1,5 +1,6 @@
 import { useState, KeyboardEvent, MouseEvent } from 'react';
 import { useLocation } from 'wouter';
+import { v4 as uuidv4 } from 'uuid';
 
 export default function HeroSection() {
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -66,7 +67,7 @@ export default function HeroSection() {
       <div className="flex gap-4">
         <button
           className="px-6 py-2 rounded-lg text-white font-medium bg-gradient-to-r from-[#4686FE] to-[#87B0FF] shadow-lg cursor-pointer"
-          onClick={() => setLocation('/chat')}
+          onClick={() => setLocation(`/chatbot/${uuidv4()}`)}
         >
           Try For Free
         </button>
