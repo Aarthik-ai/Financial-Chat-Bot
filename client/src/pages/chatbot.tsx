@@ -240,7 +240,7 @@ const Chatbot: React.FC = () => {
               <Avatar className="flex items-center justify-center">
                 {user?.photoURL ? (
                   <img
-                    src={user.photoURL}
+                  src={user.photoURL}
                     alt={user.displayName ?? "User"}
                     className="rounded-full w-8 h-8 object-cover"
                   />
@@ -284,7 +284,7 @@ const Chatbot: React.FC = () => {
         transition={{ duration: 0.3 }}
         className="bg-white dark:bg-neutral-800/80 border-r dark:border-neutral-700/30 flex flex-col shadow-lg"
       >
-        <div className=" flex  justify-between">
+        <div className="h-screen flex  justify-between">
           {isSidebarOpen && (
             <div className="flex flex-col px-6 py-4 justify-start items-start w-full ">
               <div className="flex justify-between w-full items-center">
@@ -309,13 +309,13 @@ const Chatbot: React.FC = () => {
               <p className="font-semibold text-base mt-6 mb-2 text-black/80">
                 Chats
               </p>
-              <div>
+              <div className="w-full overflow-y-auto hide-scrollbar">
                 {historyChats.map((data, index) => {
                   return (
                     <div
                       onClick={() => setLocation(`/chatbot/${data.chat_uid}`)}
                       key={index}
-                      className="truncate w-full text-base font-semibold mt-2 rounded-lg"
+                      className={`w-full truncate bg-gradient-to-r from-[#7978FF] to-[#74CAFC] text-white text-base font-semibold mt-2 rounded-lg cursor-pointer hover:bg-gradient-to-r hover:from-[#5858dd] hover:to-[#47ade7] px-1 py-1 ${id==data.chat_uid && "bg-gradient-to-r from-[#4343af] to-[#2d88bd]"}`}
                     >
                       {data.title}
                     </div>
